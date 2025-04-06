@@ -72,10 +72,16 @@ install_phpmyadmin() {
 
 # Function to create a database for PhpMyAdmin
 create_database() {
-    echo "Creating a database for PhpMyAdmin..."
-    mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE phpmyadmin;"
-    mysql -u root -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON phpmyadmin.* TO 'phpmyadmin'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';"
-    echo "Database 'phpmyadmin' created."
+    echo "Creating a database for PhpMyAdmin and securing MySQL..."
+    mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE phpmyadmin;"
+    mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON phpmyadmin.* TO 'phpmyadmin'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';"
+    mysql -u root -p"$MYSQL_ROOT_PASSWORD" <<EOF
+DELETE FROM mysql.user WHERE User='';
+DROP DATABASE test;
+DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
+FLUSH PRIVILEGES;
+EOF
+    echo "Database 'phpmyadmin' created and MySQL secured."
 }
 
 # Function to install Git
@@ -117,7 +123,7 @@ uninstall_lamp() {
 }
 
 # Prompt user for MySQL root password
-read -sp "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
+read -rsp "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
 echo
 
 # Display banner
@@ -125,6 +131,7 @@ display_banner
 
 # Main menu
 while true; do
+    echo ""
     echo "Automated Boni LAMP Stack Server Installer"
     echo "========================================"
     echo "1. Check OS and Updates"
@@ -133,7 +140,7 @@ while true; do
     echo "4. Clone GitHub Repository and Configure Apache"
     echo "5. Uninstall LAMP"
     echo "6. Exit"
-    read -p "Choose an option: " choice
+    read -rp "Choose an option: " choice
 
     case $choice in
         1)
